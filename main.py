@@ -40,6 +40,29 @@ The line is deliberately different from our already-submitted office lines
 (the reply-all line, the IT ticket line, the shared-screen line): no email,
 no ticket, no meeting, no screen — a raise, a pizza party, and a salary
 paid in slices.
+
+Revision pass (pipeline review, output byte-identical):
+  E. "My salary was frozen, so now I defrost it one pizza slice at a
+     time." — LOSES. It keeps the pizza-as-pay idea but turns it into a
+     freezer pun; the judge criteria put a true observation ahead of
+     wordplay, and C's observation (a party literally given instead of a
+     raise) is the lived experience, not a metaphor built on "frozen".
+  F. "HR said compensation is competitive. It is: my paycheck is in a
+     close race with the pizza budget." — LOSES, close. Fresh framing and
+     a real turn, but it needs two sentences of setup to land and the race
+     image blurs who won; C lands the same pay-versus-pizza contrast in
+     one clean claim the reader can repeat verbatim.
+  G. "I got a 3 percent raise and a 100 percent pizza." — LOSES. Tight,
+     but the percentages are invented precision — the joke reads as a
+     statistic, not a story, and there is no person in it; C's "I am now
+     the highest-paid person in the building" gives the line a narrator
+     whose pride in slices is the laugh.
+Decision after revision: keep C exactly as written. The only code change
+in this pass is structural: a dedicated gate-guard helper (guard_line)
+that rejects empty, oversized, or multi-line candidates before the
+existing gate check runs, so a future edit to LINE fails loudly at the
+guard instead of silently writing a bad entry file. The shipped line,
+its wording, and the bytes written to entry.txt are unchanged.
 """
 
 import os
@@ -50,6 +73,21 @@ LINE = (
     "I asked for a raise and got a pizza party. "
     "I am now the highest-paid person in the building, in slices."
 )
+
+
+def guard_line(text):
+    """Gate-guard: reject empty, oversized, or multi-line candidates early.
+
+    Runs before check_gate so a bad future edit to LINE fails with a
+    specific reason instead of a generic gate failure at write time.
+    """
+    if not isinstance(text, str) or text.strip() == "":
+        raise SystemExit("guard: line is empty or not text")
+    if len(text) > MAX_CHARS:
+        raise SystemExit("guard: line exceeds the 200 character gate")
+    if "\n" in text or "\r" in text:
+        raise SystemExit("guard: line must be a single line")
+    return text
 
 
 def check_gate(text):
@@ -64,6 +102,7 @@ def entry_path():
 
 
 def main():
+    guard_line(LINE)
     assert check_gate(LINE), "line fails the 1-200 char gate"
     with open(entry_path(), "w", encoding="utf-8") as f:
         f.write(LINE + "\n")
